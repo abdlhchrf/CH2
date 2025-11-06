@@ -36,8 +36,8 @@ void my_html(struct H2_Frame *frm) {
 
 * `{"200",8}` status 200, 8 is the index of `status 200` in `H2_static_table.c` in file `http_define.c`, same as `{NULL,8}`.
 * `{"text/html",31}` `content-type: text/html`, 31 is the index of `content-type` in `H2_static_table.c` .
-* in `response_end(frm, payload, -1);` -1 mean that the function will use `strlen()` to calculate the length of the payload.
-> use -1 in `response_end` if the buffer `payload` end with \\0.
+* in `response_end(frm, payload, -1);` `-1` mean that the function will use `strlen()` to calculate the length of the payload.
+> use `-1` in `response_end` only if the buffer `payload` end with `\\0`.
 
 
 then add the function `my_html` name to `headers_path_table` in file `http_app.c` like this :
