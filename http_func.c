@@ -1137,11 +1137,6 @@ SSL* H2_createSSL(struct H2_connection *conn) {
 	
 	char buffer[30];
 	
-	if (recv(conn->fd, buffer, 24, MSG_NOSIGNAL|MSG_PEEK)==0) //peek
-	{
-		return NULL;
-	}
-	
 	if (SSL_read(conn->ssl, buffer, 24)>0 && !strncmp("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", buffer, 24))
 	{
 		return conn->ssl;

@@ -3,7 +3,6 @@
 //~ #include <string.h>
 //~ #include <stdlib.h>
 //~ #include <sys/ioctl.h>
-//~ #include <signal.h>
 //~ #include <mysql/errmsg.h>
 //~ #include <semaphore.h>
 //~ #include <pthread.h>
@@ -16,6 +15,7 @@
 //~ sendfile(client_fd, opened_fd, 0, 256);
 
 
+#include <signal.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -42,7 +42,7 @@ int main(int argc, char const *argv[]) {
 	struct epoll_event ev, events[MAX_EPOLL_EVENTS];
 	struct H2_connection *conn_role;
     //~ struct H2_Frame *frm;
-	
+	signal(SIGPIPE, SIG_IGN);
     proc_id = getpid();
     int n, i;
     client_accepted=0;
