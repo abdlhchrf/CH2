@@ -38,7 +38,7 @@ void my_html(struct H2_Frame *frm) {
 > use -1 in `response_end` if the buffer `payload` end with \\0.
 
 
-then add the function my_html name to `headers_path_table` in file `http_app.c` like this :
+then add the function `my_html` name to `headers_path_table` in file `http_app.c` like this :
 
 ```c
 
@@ -65,9 +65,9 @@ const void *headers_path_table[][3] = {
 
 in linux terminal do :
 
-* run make in terminal.
-* run server with ./server.
-* open https://localhost:8080/ in browser.
+* run `make` in terminal.
+* run server with `./server`.
+* open `https://localhost:8080/` in browser.
 
 
 ## knowledge
