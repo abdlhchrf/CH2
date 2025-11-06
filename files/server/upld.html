@@ -1,0 +1,42 @@
+
+<html>
+
+<head>
+	<title>upload test</title>
+</head>
+	<body>	
+		<script>
+			var reader = new FileReader();
+			var	file ;
+			var form = new FormData();
+				
+			function messagesubmit(){
+				
+				//var imgElem = document.getElementById('upload');
+				file = document.getElementById("upload").files[0];
+				//~ file = new File([file],file.name,{type:file.type});
+				
+				var http = new XMLHttpRequest();
+				//~ var url = 'get_data.php';
+				//~ var params = 'orem=ipsum&name=binny';
+				http.open('POST', "/upload_file", true);
+
+				//Send the proper header information along with the request
+				//~ http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+				http.onreadystatechange = function() {//Call a function when the state changes.
+					if(http.readyState == 4 && http.status == 200) {
+						alert("yes, your file has been uploaded successfully \nchek folder /files/year/month/ \nin project folder.");
+					}
+				}
+				
+				http.send(file);
+			}
+		</script>
+	
+        <input id="upload" type='file' onchange="convert(this)"; name='filedata' />
+        <button onclick="messagesubmit()">SubmitFile</button>
+    </body>
+</html>
+
+
