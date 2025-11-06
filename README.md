@@ -3,13 +3,13 @@
 CH2 is an implementation of the Hypertext Transfer Protocol version 2 in C.
 this is http2 only server, no backward compatibility.
 
-##Requirements
+## Requirements
 
 * linux 6.15
 * openssl OpenSSL 3.6.0
 
 
-##Example
+## Example
 
 in file `http_app.c` for server application, write :
 
