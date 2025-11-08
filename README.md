@@ -86,7 +86,7 @@ in linux terminal do :
 
 ## goals
 
-* fix tcp socket from hanging in function `int req_read` .
+* fix connection from sigpipe in function `int req_read` .
 
 
 
