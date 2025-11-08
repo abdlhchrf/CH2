@@ -1,8 +1,8 @@
-# CH2 - HTTP/2 C server
+# CH2 - C HTTP/2 server
 
 CH2 is an implementation of the Hypertext Transfer Protocol version 2 in C.
 
-* this is http2 only server, no backward compatibility.
+* this is http2 only, no backward compatibility.
 * the server is multi threaded, thread pool.
 
 ## Requirements
