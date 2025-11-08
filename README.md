@@ -54,7 +54,7 @@ const void *headers_path_table[][3] = {
 
 ```
 
-* if you use your function name with path `'/'` you need also to use it with path NULL for http2 default request, like this:
+* if you use your function name with path `'/'` you need also to use it with path `NULL` for http2 default request, like this:
 
 ```c
 
@@ -83,6 +83,10 @@ in linux terminal do :
 * c pointers <https://en.wikipedia.org/wiki/Pointer_(computer_programming)>
 
 
+
+## goals
+
+* fix tcp socket from hanging in function `int req_read` .
 
 
 

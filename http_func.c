@@ -979,7 +979,7 @@ struct buffer file_magic(struct H2_Frame *frm, struct buffer buff_save) {
 int req_read(struct H2_connection *conn, char *chunk, int len) {
 	
 	
-	struct pollfd plfd[1] = {{conn->fd, POLLIN, 0}};
+	struct pollfd plfd[1] = {{conn->fd, conn->events, 0}};
 	int chunkSize = -1, trackSize=0;
 	
 	//~ printf("__req__%d____\n",  len);
@@ -995,7 +995,7 @@ int req_read(struct H2_connection *conn, char *chunk, int len) {
 		
 		//~ printf("__trackSize__%d____\n", trackSize);
 		
-		poll(plfd, 1, 0);
+		poll(plfd, 1, -1);
 		//~ poll(plfd, 1, 0);
 		if (plfd[0].revents & POLLIN) {
 			//~ printf("-----EPOLLIN------\n");
@@ -1135,10 +1135,13 @@ SSL* H2_createSSL(struct H2_connection *conn) {
 	
 	//~ printf("____%d_____\n", SSL_SESSION_get_max_fragment_length(SSL_get1_session(conn->ssl)));
 	
+	conn->events = POLLIN; // to wait for the read event only
+	
 	char buffer[30];
 	
-	if (SSL_read(conn->ssl, buffer, 24)>0 && !strncmp("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", buffer, 24))
+	if (req_read(conn, buffer, 24)>0 && !strncmp("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", buffer, 24))
 	{
+		conn->events = POLLIN|POLLOUT; // if success then wait for read and write events
 		return conn->ssl;
 	}
 	
@@ -2534,6 +2537,7 @@ struct H2_connection *H2_connection_init(int fd) {
 	conn->frame_payload = ((binary_data){malloc(sizeof(char)*MAX_FRAME_SIZE),MAX_FRAME_SIZE});
 	conn->headers_reuse = ((binary_data){malloc(sizeof(char)*max_chunk_size),max_chunk_size});
 	conn->ptr = NULL;
+	conn->events = POLLIN|POLLOUT;
 	
 	//~ memset(&conn->stream_id, 0, sizeof(struct H2_Frame*)*MAX_CONCURRENT_STREAMS);
 	

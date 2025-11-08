@@ -111,7 +111,6 @@ struct H2_Frame {
     
     struct H2_connection *conn;
     struct H2_request *request;
-    struct file file;
     
     int dpnd_id;
     unsigned char weight;
@@ -158,6 +157,8 @@ struct H2_connection {
 	struct buffer frame_payload;
 	struct buffer headers_reuse; // use headers_reuse to constract headers then send theme // used in H2_res_writeHead func.
     void *ptr;
+    
+    int events;
     
     //~ struct H2_connection *conn_next;
 };
