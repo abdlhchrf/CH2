@@ -1037,26 +1037,48 @@ int req_read(struct H2_connection *conn, char *chunk, int len) {
 }
 
 int res_write(struct H2_connection *conn, char *payload, int len) {
-	int e = -1;
+	int chunkSize = -1, trackSize=0;
 	
-	//~ struct pollfd plfd[1] = {{conn->fd, POLLOUT, 0}};
-	//~ poll(plfd, 1, -1);
-	//~ printf("res_write() send %s\n", buffer);
-	//~ if (poll(plfd, 1, -1) == -1) {return -1}
-	//~ if (plfd[0].revents & POLLOUT) {}
+	struct pollfd plfd[1] = {{conn->fd, POLLOUT, 0}};
 	
-	if (conn->ssl)
+	while (trackSize<len)
 	{
-		e = SSL_write(conn->ssl, payload, len);
-	}
-	else
-	{
-		e = send(conn->fd, payload, len, MSG_NOSIGNAL);
+		if (poll(plfd, 1, -1) <= 0)
+		{
+			//~ printf("----- poll req_read error_------\n");
+			return -1;
+		}
+		//~ printf("res_write() send %s\n", buffer);
+		//~ if (poll(plfd, 1, -1) == -1) {return -1}
+		if (plfd[0].revents & POLLOUT) {
+			
+			if (conn->ssl)
+			{
+				chunkSize = SSL_write(conn->ssl, payload+trackSize, len-trackSize);
+			}
+			else
+			{
+				chunkSize = send(conn->fd, payload+trackSize, len-trackSize, MSG_NOSIGNAL);
+			}
+			
+			if(chunkSize==-1)
+			{
+				//~ perror("res_write");
+				return -1;
+			}
+			else
+			{
+				trackSize+=chunkSize;
+			}
+		}
+		else
+		{
+			//~ printf("----- res_write POLLERR __%d__------\n", plfd[0].revents);
+			return -1;
+		}
 	}
 	
-	//~ if(e==-1){perror("res_write");}
-	
-	return e;
+	return chunkSize;
 }
 
 //~ char *tes = "h2http/1.1";
