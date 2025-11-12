@@ -1593,6 +1593,13 @@ struct bin_tree *headers_path_table_init() {
 					if (btree->next[BitVal(data_save_2[h], i)] == NULL)
 					{
 						k++;
+						
+						if (k>=HEADERS_BTREE_SIZE)
+						{
+							fprintf(stderr, "Error in headers_path_table_init: please increase HEADERS_TABLE_SIZE size in http_define.c\n");
+							exit(EXIT_FAILURE);
+						}
+						
 						headers_path_table_btree[k] = ((binary_tree){0, NULL, {NULL, NULL}});
 						btree->next[BitVal(data_save_2[h], i)] = &headers_path_table_btree[k];
 						btree = &headers_path_table_btree[k];

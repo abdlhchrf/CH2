@@ -13,6 +13,7 @@
 #define MINIMUM_WINDOW_SIZE 49151
 #define max_chunk_size 1000
 #define MAX_RECIVE_DATA_SIZE 1048576  //1MB  //81920 = 80ko
+#define HEADERS_BTREE_SIZE 2000
 
 #define MAX_EPOLL_EVENTS 20
 
