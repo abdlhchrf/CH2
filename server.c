@@ -100,7 +100,14 @@ int main(int argc, char const *argv[]) {
 	//~ printf("FREE the connection %d\n", conn_role->fd);
 	
 	//~ writeUxSocket(pid, "hello_hello",11);
-	while((nfds = epoll_wait(epollfd, events, MAX_EPOLL_EVENTS, -1)) > 0) {
+	while((nfds = epoll_wait(epollfd, events, MAX_EPOLL_EVENTS, -1))) {
+		
+		if (nfds < 0)
+		{
+			perror("epoll_wait");
+			continue;
+		}
+		
 		for (n = 0; n < nfds; ++n) {
 			if (events[n].events|EPOLLIN) {
 				//~ sleep(10000);
