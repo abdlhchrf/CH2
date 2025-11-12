@@ -84,9 +84,6 @@ in linux terminal do :
 
 
 
-## goals
-
-* fix connection from sigpipe in function `int req_read` .
 
 
 
