@@ -2260,7 +2260,7 @@ int H2_parse_settings(struct H2_connection *conn, char *buffer, int len) {
 	
 	/*##########################################################################################*/
 	
-	if (conn->client_max_frame_size != max_frame_size && max_frame_size>0)
+	if (conn->client_max_frame_size != max_frame_size && max_frame_size>3000)
 	{
 		conn->client_max_frame_size = max_frame_size;
 		
