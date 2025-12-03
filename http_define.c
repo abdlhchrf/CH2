@@ -82,6 +82,7 @@ typedef struct queue{
 typedef struct buffer{
 	char *buff;
     int len;
+    int max_len;
     void *next;
 } binary_data;
 
