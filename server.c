@@ -1,7 +1,4 @@
-//~ #include <stdio.h>
 //~ #include <sys/file.h>
-//~ #include <string.h>
-//~ #include <stdlib.h>
 //~ #include <sys/ioctl.h>
 //~ #include <mysql/errmsg.h>
 //~ #include <semaphore.h>
@@ -14,6 +11,10 @@
 //~ int opened_fd = open(req, O_RDONLY);
 //~ sendfile(client_fd, opened_fd, 0, 256);
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <signal.h>
 #include <sys/resource.h>
