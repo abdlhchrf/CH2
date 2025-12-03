@@ -49,6 +49,12 @@ int upload_file_prepare(struct H2_Frame *frm) {
 	data_save_2.buff[data_save_2.len+32]='\0'; // for the open function
 				
 	frm->request->file.path.buff = malloc(sizeof(char)*(data_save_2.len+32+1)); // +1 for '\0'
+	
+	if (!frm->request->file.path.buff)
+	{
+		return -1;
+	}
+	
 	frm->request->file.path.len = (data_save_2.len+32);
 	memcpy(frm->request->file.path.buff, data_save_2.buff, (data_save_2.len+32+1));
 	frm->request->file.id.buff = frm->request->file.path.buff+data_save_2.len;
