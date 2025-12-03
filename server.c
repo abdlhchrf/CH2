@@ -124,11 +124,18 @@ int main(int argc, char const *argv[]) {
 					
 					printf("connection %d\n", i);
 					
+					conn_role = H2_connection_init(i);
+					
+					if (!conn_role)
+					{
+						//~ printf("error H2_connection_init : malloc return NULL\n");
+						close(i);
+						continue;
+					}		
+					
 					mtx_lock(&client_accepted_mutex);
 					client_accepted++;
 					mtx_unlock(&client_accepted_mutex);
-					
-					conn_role = H2_connection_init(i);
 					
 					if (events[n].data.fd == conn_sock && !H2_createSSL(conn_role)) // 10 ms
 					{

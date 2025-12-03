@@ -889,6 +889,12 @@ struct bin_tree *magic_table_init() {
 	
 	magic_table_btree = malloc(sizeof(struct bin_tree)*1000);
 	
+	if (!magic_table_btree)
+	{
+		fprintf(stderr, "Error in magic_table_init: malloc return NULL.c\n");
+		exit(EXIT_FAILURE);
+	}
+	
 	magic_table_btree[0] = (binary_tree){0, NULL, {NULL, NULL}};
 	
 	int i=0, j=1, k=0, h=0; // j = 1 to skipe the default for unknow files
@@ -1337,7 +1343,7 @@ int add_conn_to_router(struct H2_connection *conn, struct buffer data, char type
 struct buffer str_prepare(struct buffer pos, char* str, struct buffer list[]) {
 	int i=0, j=0, k=0;
 	//~ char *rnd=NULL;
-	struct buffer data = ((binary_data){NULL,0,NULL});
+	struct buffer data = ((binary_data){NULL,0,0,NULL});
 	
 	while (str[0] && k<pos.len)
 	{
@@ -1560,6 +1566,12 @@ struct bin_tree *headers_path_table_init() {
 	char *data_save_2;
 	
 	headers_path_table_btree = malloc(sizeof(struct bin_tree)*1000);
+		
+	if (!headers_path_table_btree)
+	{
+		fprintf(stderr, "Error in headers_path_table_init: malloc return NULL.c\n");
+		exit(EXIT_FAILURE);
+	}
 	
 	headers_path_table_btree[0] = (binary_tree){0, NULL, {NULL, NULL}};
 	
@@ -2144,6 +2156,12 @@ struct bin_tree *H2_huff_table_init() {
 	
 	huff_btree = malloc(sizeof(struct bin_tree)*1000);  //4688 _512
 	
+	if (!huff_btree)
+	{
+		fprintf(stderr, "Error in H2_huff_table_init: malloc return NULL.c\n");
+		exit(EXIT_FAILURE);
+	}
+	
 	huff_btree[0] = ((binary_tree){0, NULL, {NULL, NULL}});
 	
 	int k=0, i=0, j=0;
@@ -2188,6 +2206,12 @@ struct buffer H2_huff_table_search(char **buffer, char *buff_end) {
 	j=0, i=0;
 	
 	char *buff = malloc((len*2)*sizeof(char)+1);
+	
+	if (!buff)
+	{
+		return buffStruct;
+	}
+	
 	char *end = buff;
 	buffStruct.buff = buff;
 	
@@ -2266,6 +2290,12 @@ int H2_parse_settings(struct H2_connection *conn, char *buffer, int len) {
 		
 		if (conn->frame_payload.buff) {free(conn->frame_payload.buff);}
 		conn->frame_payload.buff = malloc(sizeof(char)*conn->client_max_frame_size);
+		
+		if (!conn->frame_payload.buff)
+		{
+			return -1;
+		}
+		
 		conn->frame_payload.len = conn->client_max_frame_size;
 	}
 	
@@ -2280,6 +2310,14 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 	struct H2_header *head = NULL;
 		
 	struct H2_request *req = malloc(sizeof(struct H2_request));
+	
+	if (!req)
+	{
+		return NULL;
+	}
+	
+	frm->request = req;
+	
 	req->method = ((binary_data){NULL,0});
 	req->path = ((binary_data){NULL,0});
 	req->headers = NULL;
@@ -2379,6 +2417,12 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 			*/
 						
 			head = malloc(sizeof(struct H2_header));
+			
+			if (!head)
+			{
+				return NULL;
+			}
+			
 			head->next = conn->dynamic_table;
 			head->prev = NULL;
 			head->pos = 0;
@@ -2414,6 +2458,12 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 			{
 				buffer++; // +1 byte for the Index byte
 				conn->dynamic_table->name = H2_huff_table_search(&buffer, end);
+				
+				if (!conn->dynamic_table->name.buff)
+				{
+					return NULL;
+				}
+				
 				conn->dynamic_table_len += conn->dynamic_table->name.len;
 			}
 					
@@ -2422,6 +2472,12 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 			//~ printf("___char: %b ", buffer[0] & 0xff);
 			
 			conn->dynamic_table->value = H2_huff_table_search(&buffer, end);
+			
+			if (!conn->dynamic_table->value.buff)
+			{
+				return NULL;
+			}
+			
 			conn->dynamic_table_len += conn->dynamic_table->value.len;
 			
 			//~ printf("__6__conn->dynamic_table_len: %d \n",conn->dynamic_table_len);
@@ -2494,6 +2550,12 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 			 */
 			
 			head = malloc(sizeof(struct H2_header));
+			
+			if (!head)
+			{
+				return NULL;
+			}
+			
 			head->next = req->headers;
 			head->prev = NULL;
 			
@@ -2515,11 +2577,22 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 			{
 				buffer++; // +1 byte for the Index byte
 				req->headers->name = H2_huff_table_search(&buffer, end);
+				
+				if (!req->headers->name.buff)
+				{
+					return NULL;
+				}
+				
 				//~ printf("____String: %s ",H2_huff_table_search(&buffer).buff);
 			}
 			
 			// value :
 			req->headers->value = H2_huff_table_search(&buffer, end);
+			
+			if (!req->headers->value.buff)
+			{
+				return NULL;
+			}
 			
 			//~ printf("__4__String: %.*s \n",req->headers->value.len, req->headers->value.buff);
 			
@@ -2548,6 +2621,12 @@ struct H2_connection *H2_connection_init(int fd) {
 	int i=0;
 	
 	conn = malloc(sizeof(struct H2_connection));
+	
+	if (!conn)
+	{
+		return NULL;
+	}
+	
 	conn->fd = fd;
 	conn->ssl = NULL;
 	mtx_init(&conn->ready, 0);
@@ -2564,7 +2643,22 @@ struct H2_connection *H2_connection_init(int fd) {
 	conn->client_max_frame_size = MAX_FRAME_SIZE;
 	//~ conn->conn_next = NULL;
 	conn->frame_payload = ((binary_data){malloc(sizeof(char)*MAX_FRAME_SIZE),MAX_FRAME_SIZE});
+	
+	if (!conn->frame_payload.buff)
+	{
+		free(conn);
+		return NULL;
+	}
+	
 	conn->headers_reuse = ((binary_data){malloc(sizeof(char)*max_chunk_size),max_chunk_size});
+	
+	if (!conn->headers_reuse.buff)
+	{
+		free(conn->frame_payload.buff);
+		free(conn);
+		return NULL;
+	}
+	
 	conn->ptr = NULL;
 	conn->events = POLLIN|POLLOUT;
 	
@@ -2583,6 +2677,12 @@ struct H2_Frame *H2_Frame_init(struct H2_connection *conn, char *frame_head) { /
     struct H2_Frame *frm = NULL;
 	
 	frm = malloc(sizeof(struct H2_Frame));
+	
+	if (!frm)
+	{
+		return NULL;
+	}
+	
 	frm->len = cton(frame_head, 24);
 	frm->type = frame_head[3]&0xff;
 	frm->flags = frame_head[4]&0xff;
@@ -2598,6 +2698,7 @@ struct H2_Frame *H2_Frame_init(struct H2_connection *conn, char *frame_head) { /
 	//~ frm->recv_window=conn->client_initial_window_size;
     frm->send_window = conn->client_initial_window_size;
 	//~ printf("H2_Frame_init: %d\n", frm->send_window);
+	conn->stream_id[frm->stream_id] = frm; // add it to connection struct
 	
 	if (frm->len > 0 && frm->len <= conn->frame_payload.len)
 	{
@@ -2830,6 +2931,13 @@ int H2_thread(void *arg) {
 							if (!data_save)
 							{
 								data_save = malloc(sizeof(struct buffer));
+								
+								if (!data_save)
+								{
+									free_connection(conn);
+									break;
+								}
+								
 								data_save->next = NULL;
 								frm->request->chunk_struct = data_save;
 							}
@@ -2851,10 +2959,24 @@ int H2_thread(void *arg) {
 								
 								data_save->next = malloc(sizeof(struct buffer));
 								data_save = data_save->next;
+								
+								if (!data_save)
+								{
+									free_connection(conn);
+									break;
+								}
+								
 								data_save->next = NULL;
 							}
 							
 							data_save->buff = malloc(sizeof(char)*cton(frame_head, 24));
+							
+							if (!data_save->buff)
+							{
+								free_connection(conn);
+								break;
+							}
+							
 							strncpy(data_save->buff, conn->frame_payload.buff+BitVal(frame_head[5], 3), cton(frame_head, 24)-(BitVal(frame_head[5],3)?cton(conn->frame_payload.buff, 8):0));
 							data_save->len = cton(frame_head, 24)-(BitVal(frame_head[5],3)?cton(conn->frame_payload.buff, 8):0);
 							if (BitVal(frame_head[4],0)==1) // last frame 
@@ -2886,10 +3008,20 @@ int H2_thread(void *arg) {
 				break;
 				case 0x01: // HEADERS frame
 					frm = H2_Frame_init(conn, frame_head);
-					conn->stream_id[frm->stream_id] = frm; // add it to connection struct
+					
+					if (!frm)
+					{
+						free_connection(conn);
+						break;
+					}
+					
 					printf("headers parseing ...\n");
 					
-					frm->request = H2_parse_headers(frm, conn);
+					if (!H2_parse_headers(frm, conn))
+					{
+						free_connection(conn);
+						break;
+					}
 					
 					if(conn->dynamic_table_len > MAX_HEADER_LIST_SIZE) {
 						H2_res_write(conn, 8, 7, 0, 0, "00000001"); // GOAWAY
@@ -2923,7 +3055,13 @@ int H2_thread(void *arg) {
 					//~ if (cton(buffer, 24) > 0 && cton(buffer, 24) < 100)
 					//~ H2_req_read(conn, data, cton(buffer, 24));
 					frm = H2_Frame_init(conn, frame_head);
-					conn->stream_id[frm->stream_id] = frm;
+					
+					if (!frm)
+					{
+						free_connection(conn);
+						break;
+					}
+					
 					//~ printf("____Exclusive: %d \n", BitVal(conn->frame_payload.buff[0], 7));
 					//~ printf("____Stream_Dependency: %d \n", cton(conn->frame_payload.buff, 31));
 					frm->dpnd_id = cton(conn->frame_payload.buff, 31);
@@ -2936,7 +3074,12 @@ int H2_thread(void *arg) {
 					if (BitVal(frame_head[4],0)==1) break;
 					
 					i=H2_req_read(conn, conn->frame_payload.buff, cton(frame_head, 24));
-					H2_parse_settings(conn, conn->frame_payload.buff, i);
+					
+					if (H2_parse_settings(conn, conn->frame_payload.buff, i) == -1)
+					{
+						free_connection(conn);
+						break;
+					}
 					
 					H2_res_write(conn, 30, 4, 0, 0,
 						"\x00\x01\x00\x00\x10\x00"
