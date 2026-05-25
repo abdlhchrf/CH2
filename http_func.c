@@ -1705,37 +1705,18 @@ struct H2_header *H2_get_header(struct H2_header *H2_header, int header) {
 	int i=0, j=0;
 	
 	struct H2_header *H2_header_save = H2_header;
-	struct H2_header *H2_header_save_2;
 	
 	if (header <= 61)
 	{
 		return NULL;
 	}
 	
-	j = header-61;
+	j = header-62;
 	
 	while (H2_header_save)
 	{
 		if (i==j)
 		{
-			H2_header_save_2 = H2_header;
-			
-			if (H2_header_save->name.buff)
-			{
-				break;
-			}
-			
-			while (H2_header_save_2)
-			{
-				//~ printf("___%d\n", j);
-				if (!H2_header_save_2->name.buff && H2_header_save_2->name.len == H2_header_save->name.len)
-				{
-					return H2_header_save_2;
-				}
-				
-				H2_header_save_2 = H2_header_save_2->next;
-			}
-			
 			break;
 		}
 		
@@ -2377,6 +2358,7 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 	int header=0;
 	char *end = buffer+frm->len;
 	struct H2_header *head = NULL;
+	struct H2_header *head_2 = NULL;
 		
 	struct H2_request *req = malloc(sizeof(struct H2_request));
 	
@@ -2450,7 +2432,7 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 						req->method = ((binary_data){(char*)H2_static_table[2][1], 3}); // "GET" lenght is 3
 						break;
 					case 3:
-						if (head && !head->name.buff && head->name.len==0)
+						if (head && !head->name.buff)
 						{
 							req->method = head->value;
 							break;
@@ -2506,25 +2488,26 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 				conn->dynamic_table->prev = head;
 			}
 			
-			conn->dynamic_table = head;
 			
 			if (cton(buffer, 6) > 0) // -- Indexed Name
 			{
 				header = H2_decode_header(&buffer, 6, end);
 				//~ printf("___6__header: %d \n",header);
 				
-				head = H2_get_header(conn->dynamic_table, header);
-				if (head && !head->name.buff)
+				head_2 = H2_get_header(conn->dynamic_table, header);
+				if (head_2 && !head_2->name.buff)
 				{
-					header = head->name.len;
+					header = head_2->name.len;
 				}
 				
+				conn->dynamic_table = head;
 				//~ printf("___6__header: %d \n",header);
 				conn->dynamic_table->name.buff = NULL;
 				conn->dynamic_table->name.len = header;
 			}
 			else // -- New Name
 			{
+				conn->dynamic_table = head;
 				buffer++; // +1 byte for the Index byte
 				conn->dynamic_table->name = H2_huff_table_search(&buffer, end);
 				
@@ -2633,17 +2616,25 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 				req->headers->prev = head;
 			}
 			
-			req->headers = head;
 			
 			if (cton(buffer, 4) > 0) // indexed header
 			{
-				header = H2_decode_header(&buffer, 4, end); 
+				header = H2_decode_header(&buffer, 4, end);
+				
+				head_2 = H2_get_header(conn->dynamic_table, header);
+				if (head_2 && !head_2->name.buff)
+				{
+					header = head_2->name.len;
+				}
+				
+				req->headers = head;
 				req->headers->name.buff = NULL;
 				req->headers->name.len = header;
 				//~ printf("___Header: %d ", header);
 			}
 			else // not indexed header
 			{
+				req->headers = head;
 				buffer++; // +1 byte for the Index byte
 				req->headers->name = H2_huff_table_search(&buffer, end);
 				
