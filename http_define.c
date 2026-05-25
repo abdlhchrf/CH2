@@ -32,6 +32,8 @@
 #define response_file(frm,path,headers) open_file(frm, frm->request->file.fd, path, O_RDONLY); response_writeHead(frm,headers);
 #define response_end_file(x,y) if(res_file(x, y)==-1){free_req(x);continue;}
 
+#define read_to_buffer_array(frm) if (H2_read_to_buffer_array(frm) == -1){response_500(frm); return;}
+
 #define sql_query(dbconn,data_stack) ((sql_request(dbconn, data_stack))?\
 	 ({response_writeHead(frm, (array{{NULL,14}, {NULL,0} })); response_end(frm, "Error in query", -1);return; ((binary_data){NULL,0});}) \
 	:({struct buffer data = sql_json_response(dbconn, data_stack); data;}))
