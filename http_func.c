@@ -2104,6 +2104,75 @@ int H2_res_write(struct H2_connection *conn, int len, char type, char flags, int
 	return chunkSize;
 }
 
+int H2_read_to_buffer_array(struct H2_Frame *frm) {
+	
+	struct H2_connection *conn = frm->conn;
+	struct buffer *data_save;
+	int i=0;
+	
+	if (H2_req_read(conn, conn->frame_payload.buff, frm->len) != frm->len)
+	{
+		//~ H2_res_writeHead(frm, (array{{NULL,14},{NULL,0} }));
+		//~ response_end(frm, "H2_req_read", -1);
+		return -1;
+	}
+	
+	data_save = frm->request->chunk_struct;
+	if (!data_save)
+	{
+		data_save = malloc(sizeof(struct buffer));
+		
+		if (!data_save)
+		{
+			//~ free_connection(conn);
+			return -1;
+		}
+		
+		data_save->next = NULL;
+		frm->request->chunk_struct = data_save;
+	}
+	else
+	{
+		i=0;
+		while (data_save->next)
+		{
+			i++;
+			data_save = data_save->next;
+		}
+		
+		if (i>6)
+		{
+			//~ H2_res_write(conn, 8, 7, 0, 0, "00000001"); // GOAWAY
+			//~ free_connection(conn);
+			return -1;
+		}
+		
+		data_save->next = malloc(sizeof(struct buffer));
+		data_save = data_save->next;
+		
+		if (!data_save)
+		{
+			//~ free_connection(conn);
+			return -1;
+		}
+		
+		data_save->next = NULL;
+	}
+	
+	data_save->buff = malloc(sizeof(char)*frm->len);
+	
+	if (!data_save->buff)
+	{
+		//~ free_connection(conn);
+		return -1;
+	}
+	
+	strncpy(data_save->buff, conn->frame_payload.buff+BitVal(frm->flags, 3), frm->len-(BitVal(frm->flags,3)?cton(conn->frame_payload.buff, 8):0));
+	data_save->len = frm->len-(BitVal(frm->flags,3)?cton(conn->frame_payload.buff, 8):0);
+	
+	return 0;
+}
+
 int H2_res_writeHead(struct H2_Frame *frm, struct buffer list[]) {
 	int i=0, k=0;
 	char *end = frm->conn->headers_reuse.buff;
