@@ -248,8 +248,7 @@ long strnum(char *buffer, int size) { // convert number in string to number long
     return result;
 }
 
-struct buffer numstr(struct buffer buff, int pos, long numb) { // convert number to string  Ex: 1234 ==> "1234"
-	struct buffer data_save = buff;
+struct buffer *numstr(struct buffer *data_save, long numb) { // convert number to string  Ex: 1234 ==> "1234"
 	long k=0;
 	int a=0, i=0, h=0;
 	char data[30];
@@ -259,12 +258,12 @@ struct buffer numstr(struct buffer buff, int pos, long numb) { // convert number
 	k = numb;
 	if (k==0)
 	{
-		buff.buff[pos] = '0';
-		a++;
+		data_save->buff[data_save->len] = '0';
+		data_save->len++;
 	}
 	else
 	{
-		while (a<=buff.len)
+		while (a < 30)
 		{
 			//~ if (k&0x0F <= 0x9)
 			//~ {}
@@ -277,17 +276,16 @@ struct buffer numstr(struct buffer buff, int pos, long numb) { // convert number
 			if (k==0) {break;}
 		}
 		
-		for (h=0,i=a-1; i >= 0 && pos<buff.len-2; i--,h++)
+		for (i=a-1; i >= 0 && data_save->max_len > data_save->len; i--)
 		{
-			buff.buff[pos] = data[i];
-			pos++;
-			//~ printf("___________%*.s_____%c____%d____%d\n", a, buff.buff, data[h], h, i);
+			data_save->buff[data_save->len] = data[i];
+			data_save->len++;
+			//~ printf("___________%*.s_____%c____%d____%d\n", a, data_save->buff, data[h], h, i);
 		}
-			//~ printf("_________%s_____%c____%d____%d\n", buff.buff, data[h], h, i);
+			//~ printf("_________%s_____%c____%d____%d\n", data_save->buff, data[h], h, i);
 	}
 	
-	//~ buff.buff[pos] = '\0';
-	data_save.len = a;
+	//~ data_save->buff[data_save->len] = '\0';
 	return data_save;
 }
 
@@ -422,8 +420,10 @@ int strscmp(char *needle, char *data, int len) {
 	return 0;
 }
 
-struct buffer make_str(struct buffer data_stack, struct buffer list[], int dir_mode) {
-	int i=0, j=0, k=0;
+struct buffer *make_str(struct buffer *data_stack, struct buffer list[], int dir_mode) {
+	int i=0, j=0;
+	
+	data_stack->len = 0;
 	
 	while (list[i].buff || list[i].len>-1)
 	{
@@ -432,34 +432,34 @@ struct buffer make_str(struct buffer data_stack, struct buffer list[], int dir_m
 		if (list[i].buff)
 		{
 			j = list[i].len>-1?list[i].len:strlen(list[i].buff);
-			memcpy(data_stack.buff+k, list[i].buff, j);
-			k+=j;
+			memcpy(data_stack->buff+data_stack->len, list[i].buff, j);
+			data_stack->len+=j;
 		}
-		else if (k+10<data_stack.len)
+		else
 		{
-			//~ 2025-09-24 18:11:08 example
-			k += numstr(data_stack, k, list[i].len).len;
+			//~ 2025-9-24 18:11:8 example
+			numstr(data_stack, list[i].len);
 		}
 		
 		i++;
 		
 		if (dir_mode>0)
 		{
-			data_stack.buff[k]='\0';
+			data_stack->buff[data_stack->len]='\0';
 			
-			if (mkdir(data_stack.buff, dir_mode)==-1)
+			if (mkdir(data_stack->buff, dir_mode)==-1)
 			{
 				//~ printf("-----make dir error---\n");
 			}
 			
-			data_stack.buff[k]='/';
-			k++;
+			data_stack->buff[data_stack->len]='/';
+			data_stack->len++;
 		}
 	}
 	
-	data_stack.buff[k]='\0';
+	data_stack->buff[data_stack->len]='\0';
 	
-	return ((binary_data){data_stack.buff, k});
+	return data_stack;
 }
 
 void str_rmv_char(char c, struct buffer path) {
@@ -531,58 +531,72 @@ int url_safe(char *to, char *data, int size) { // url_safe to prevent ../../ ...
 	return k;
 }
 
-int str_escape(struct buffer str, int *pos, struct buffer data) {
+int str_escape(struct buffer *str, struct buffer data) {
 	
 	int j = data.len>=0?data.len:strlen(data.buff);
-	for (int i = 0; i<j && (*pos)<str.len-2; i++)
+	char to_esc = 0;
+	
+	if (str->len > 0)
 	{
-		//~ printf("%c\n", data.buff[i]);
+		to_esc = str->buff[str->len-1];
+		//~ printf("__%c________________ \n",str->buff[str->len-1]);
+	}
+	
+	for (int i = 0; i<j && str->len<str->max_len-2; i++)
+	{
 		switch (data.buff[i])
 		{
+			case '\\':
+				if (to_esc == '\'')
+				{strcpy(str->buff+str->len, "\\\\"); str->len+=2;}
+				break;
 			case '\'':
-				strcpy(str.buff+(*pos), "\\'"); (*pos)+=2;
+				if (to_esc == data.buff[i])
+				{strcpy(str->buff+str->len, "\\'"); str->len+=2;}
+				else
+				{str->buff[str->len] = data.buff[i]; str->len++;}
 				break;
 			case '\"':
-				strcpy(str.buff+(*pos), "\\\""); (*pos)+=2;
+				if (to_esc == data.buff[i])
+				{strcpy(str->buff+str->len, "\\\""); str->len+=2;}
+				else
+				{str->buff[str->len] = data.buff[i]; str->len++;}
 				break;
 			case '\0':
-				strcpy(str.buff+(*pos), "\\0"); (*pos)+=2;
-				break;
-			case '\\':
-				strcpy(str.buff+(*pos), "\\\\"); (*pos)+=2;
+				strcpy(str->buff+str->len, "\\0"); str->len+=2;
 				break;
 			case '\n':
-				strcpy(str.buff+(*pos), "\\n"); (*pos)+=2;
+				strcpy(str->buff+str->len, "\\n"); str->len+=2;
 				break;
 			case '\r':
-				strcpy(str.buff+(*pos), "\\r"); (*pos)+=2;
+				strcpy(str->buff+str->len, "\\r"); str->len+=2;
 				break;
 			case '\t':
-				strcpy(str.buff+(*pos), "\\t"); (*pos)+=2;
+				strcpy(str->buff+str->len, "\\t"); str->len+=2;
 				break;
 			case '\b':
-				strcpy(str.buff+(*pos), "\\b"); (*pos)+=2;
+				strcpy(str->buff+str->len, "\\b"); str->len+=2;
 				break;
 			case '\v':
-				strcpy(str.buff+(*pos), "\\v"); (*pos)+=2;
+				strcpy(str->buff+str->len, "\\v"); str->len+=2;
 				break;
 			case '\e':
-				strcpy(str.buff+(*pos), "\\e"); (*pos)+=2;
+				strcpy(str->buff+str->len, "\\e"); str->len+=2;
 				break;
 			case '\f':
-				strcpy(str.buff+(*pos), "\\f"); (*pos)+=2;
+				strcpy(str->buff+str->len, "\\f"); str->len+=2;
 				break;
 			//~ case '\u':
-				//~ strcpy(str.buff+(*pos), "\\u"); (*pos)+=2;
+				//~ strcpy(str->buff+str->len, "\\u"); str->len+=2;
 				//~ break;
 			default:
-				str.buff[(*pos)] = data.buff[i];
-				(*pos)++;
+				str->buff[str->len] = data.buff[i];
+				str->len++;
 				break;
 		}
 	}
-	str.buff[(*pos)] = '\0';
-	return (*pos);
+	str->buff[str->len] = '\0';
+	return str->len;
 }
 
 int str_pack(struct buffer path) { // left shift chars to remove void
@@ -1340,35 +1354,43 @@ int add_conn_to_router(struct H2_connection *conn, struct buffer data, char type
 	return i;
 }
 
-struct buffer str_prepare(struct buffer pos, char* str, struct buffer list[]) {
-	int i=0, j=0, k=0;
+struct buffer *str_prepare(struct buffer *pos, char* str, struct buffer list[]) {
+	int i=0, j=0;
+	pos->len=0;
 	//~ char *rnd=NULL;
-	struct buffer data = ((binary_data){NULL,0,0,NULL});
 	
-	while (str[0] && k<pos.len)
+	while (str[0] && pos->max_len > pos->len)
 	{
-		//~ printf("______%.*s______\n", k, pos.buff);
+		//~ printf("______%.*s______\n", pos->len, pos->buff);
 		switch (str[0])
 		{
-			case '?':
+			case '?': // for string
 				if (list[i].buff)
 				{
-					if (k+list[i].len > pos.len) {break;}
-					str_escape(pos, &k, list[i]);
-				}
-				else if (list[i].len>-1 && k+10<pos.len)
-				{
-					//~ 2025-09-24 18:11:08 example
-					k += numstr(pos, k, list[i].len).len;
+					str_escape(pos, list[i]);
 				}
 				else
 				{
-					k--;
-					strcpy(pos.buff+k, "NULL");
-					k+=4;
+					pos->len--;
+					strcpy(pos->buff+pos->len, "NULL");
+					pos->len+=4;
 					str++;
+					
+					if (list[i].len == -1)
+					{
+						break;
+					}
 				}
-				
+				i++;
+			break; // for number
+			case '@':
+				if (list[i].len == -1)
+				{
+					pos->buff[pos->len]='0';
+					pos->len++;
+					break;
+				}
+				numstr(pos, list[i].len);
 				i++;
 			break;
 			case '%':
@@ -1386,23 +1408,22 @@ struct buffer str_prepare(struct buffer pos, char* str, struct buffer list[]) {
 					}
 				}
 				
-				if (k+j>pos.len) {break;}
-				data.next=random_char(pos.buff+k, j);
+				if (pos->max_len>pos->len+j) {
+					pos->next=random_char(pos->buff+pos->len, j);
+					pos->len+=j;
+				}
 				
-				k+=j;
 			break;
 			default:
-				pos.buff[k]=str[0];
-				k++;
+				pos->buff[pos->len]=str[0];
+				pos->len++;
 		}
 		str++;
 	}
-	pos.buff[k]='\0';
 	
-	data.buff=pos.buff;
-	data.len=k;
-	
-	return data;
+	pos->buff[pos->len]='\0';
+		
+	return pos;
 }
 
 /*
@@ -2162,7 +2183,7 @@ int H2_res_writeHead(struct H2_Frame *frm, struct buffer list[]) {
 	//~ printf("res_writeHead() %s\n", buffer[0]);
 	//~ if(res_write(frm, "HTTP/1.1 ", 9)==-1) {perror("res_writeHead00");return -1;}
 	
-	while ((list[i].buff || list[i].len>0) && frm->conn->headers_reuse.len>k )
+	while ((list[i].buff || list[i].len>0) && frm->conn->headers_reuse.max_len>k )
 	{
 		if (list[i].buff)
 		{
@@ -2346,7 +2367,7 @@ int H2_parse_settings(struct H2_connection *conn, char *buffer, int len) {
 			return -1;
 		}
 		
-		conn->frame_payload.len = conn->client_max_frame_size;
+		conn->frame_payload.max_len = conn->client_max_frame_size;
 	}
 	
 	return 0;
@@ -2642,8 +2663,6 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 				{
 					return NULL;
 				}
-				
-				//~ printf("____String: %s ",H2_huff_table_search(&buffer).buff);
 			}
 			
 			// value :
@@ -2702,7 +2721,7 @@ struct H2_connection *H2_connection_init(int fd) {
 	conn->client_initial_window_size = SETTINGS_INITIAL_WINDOW_SIZE;
 	conn->client_max_frame_size = MAX_FRAME_SIZE;
 	//~ conn->conn_next = NULL;
-	conn->frame_payload = ((binary_data){malloc(sizeof(char)*MAX_FRAME_SIZE),MAX_FRAME_SIZE});
+	conn->frame_payload = ((binary_data){malloc(sizeof(char)*MAX_FRAME_SIZE),0,MAX_FRAME_SIZE});
 	
 	if (!conn->frame_payload.buff)
 	{
@@ -2710,7 +2729,7 @@ struct H2_connection *H2_connection_init(int fd) {
 		return NULL;
 	}
 	
-	conn->headers_reuse = ((binary_data){malloc(sizeof(char)*max_chunk_size),max_chunk_size});
+	conn->headers_reuse = ((binary_data){malloc(sizeof(char)*max_chunk_size),0,max_chunk_size});
 	
 	if (!conn->headers_reuse.buff)
 	{
@@ -2760,9 +2779,10 @@ struct H2_Frame *H2_Frame_init(struct H2_connection *conn, char *frame_head) { /
 	//~ printf("H2_Frame_init: %d\n", frm->send_window);
 	conn->stream_id[frm->stream_id] = frm; // add it to connection struct
 	
-	if (frm->len > 0 && frm->len <= conn->frame_payload.len)
+	if (frm->len > 0 && frm->len <= conn->frame_payload.max_len)
 	{
 		//~ while ((count = H2_req_read(conn, frm->payload, frm->len)) < frm->len) {}
+		conn->frame_payload.len = frm->len;
 		H2_req_read(conn, conn->frame_payload.buff, frm->len);
 	}
 	
@@ -2813,7 +2833,6 @@ int H2_thread(void *arg) {
 	int i=0, t=0, h=0, weight=0, size=0, t_size=0;
 	//~ int weight_size = 255;
 	char frame_head[9];
-	struct buffer *data_save;
 
 	struct epoll_event ev; // for return the connection after one shot on epoll
 	
@@ -2882,7 +2901,7 @@ int H2_thread(void *arg) {
 						else if(size < t_size)
 						{
 							H2_res_write(conn, size, 0, 1, h, conn->frame_payload.buff);
-							H2_res_write(conn, 4, 3, 0, h, "0000"); // send RST_STREAM frame
+							//~ H2_res_write(conn, 4, 3, 0, h, "0000"); // send RST_STREAM frame // cause NS_ERROR_NET_PARTIAL_TRANSFER
 							H2_free_stream(conn, h);
 							break;
 						}
@@ -2978,76 +2997,7 @@ int H2_thread(void *arg) {
 						frm->flags = frame_head[4];
 						// frm->stream_id is the same
 						
-						if (frm->request->file.fd == 0) // not a FILE 
-						{
-							if (H2_req_read(conn, conn->frame_payload.buff, frm->len) != frm->len)
-							{
-								H2_res_writeHead(frm, (array{{NULL,13},{NULL,0} }));
-								response_end(frm, "404 Not Found", -1);
-								break;
-							}
-							
-							data_save = frm->request->chunk_struct;
-							if (!data_save)
-							{
-								data_save = malloc(sizeof(struct buffer));
-								
-								if (!data_save)
-								{
-									free_connection(conn);
-									break;
-								}
-								
-								data_save->next = NULL;
-								frm->request->chunk_struct = data_save;
-							}
-							else
-							{
-								i=0;
-								while (data_save->next)
-								{
-									i++;
-									data_save = data_save->next;
-								}
-								
-								if (i>6)
-								{
-									H2_res_write(conn, 8, 7, 0, 0, "00000001"); // GOAWAY
-									free_connection(conn);
-									break;
-								}
-								
-								data_save->next = malloc(sizeof(struct buffer));
-								data_save = data_save->next;
-								
-								if (!data_save)
-								{
-									free_connection(conn);
-									break;
-								}
-								
-								data_save->next = NULL;
-							}
-							
-							data_save->buff = malloc(sizeof(char)*cton(frame_head, 24));
-							
-							if (!data_save->buff)
-							{
-								free_connection(conn);
-								break;
-							}
-							
-							strncpy(data_save->buff, conn->frame_payload.buff+BitVal(frame_head[5], 3), cton(frame_head, 24)-(BitVal(frame_head[5],3)?cton(conn->frame_payload.buff, 8):0));
-							data_save->len = cton(frame_head, 24)-(BitVal(frame_head[5],3)?cton(conn->frame_payload.buff, 8):0);
-							if (BitVal(frame_head[4],0)==1) // last frame 
-							{
-								if (frm->request->application)
-								{
-									frm->request->application(frm);
-								}
-							}
-						}
-						else if (frm->request->application) // FILE
+						if (frm->request->application) // FILE
 						{
 							frm->request->application(frm);
 						}

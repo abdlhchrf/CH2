@@ -19,7 +19,6 @@ void GET_favicon(struct H2_Frame *frm) {
 
 int upload_file_prepare(struct H2_Frame *frm) {
 	
-	struct buffer data_save_2;
 	struct H2_connection *conn = frm->conn;
 	
 	H2_req_peek(conn, conn->frame_payload.buff, 20); // peek only 20 byte or less for file magic.
@@ -34,7 +33,7 @@ int upload_file_prepare(struct H2_Frame *frm) {
 	frm->request->file.time = date_time();
 	//~ 2025-09-24 18:11:08
 	
-	data_save_2=make_str(conn->frame_payload,
+	make_str(&conn->frame_payload,
 		(array{ {"./files",-1},
 			{NULL,frm->request->file.time.tm_year+1900},
 			{NULL,frm->request->file.time.tm_mon+1},
@@ -42,22 +41,24 @@ int upload_file_prepare(struct H2_Frame *frm) {
 		{NULL,-1} }),
 		0777);
 		
-	random_char((data_save_2.buff+data_save_2.len), 32);
+	random_char((conn->frame_payload.buff+conn->frame_payload.len), 32);
 	//~ ./files/2025/9/24/18/A76B45C5D432...
 
 	//~ printf("-----------%.*s---\n", data_save_2.len+32, data_save_2.buff);
-	data_save_2.buff[data_save_2.len+32]='\0'; // for the open function
-				
-	frm->request->file.path.buff = malloc(sizeof(char)*(data_save_2.len+32+1)); // +1 for '\0'
+	conn->frame_payload.buff[conn->frame_payload.len+32]='\0'; // for the open function
+	conn->frame_payload.len += 32;
+	
+	
+	frm->request->file.path.buff = malloc(sizeof(char)*(conn->frame_payload.len+1)); // +1 for '\0'
 	
 	if (!frm->request->file.path.buff)
 	{
 		return -1;
 	}
 	
-	frm->request->file.path.len = (data_save_2.len+32);
-	memcpy(frm->request->file.path.buff, data_save_2.buff, (data_save_2.len+32+1));
-	frm->request->file.id.buff = frm->request->file.path.buff+data_save_2.len;
+	frm->request->file.path.len = conn->frame_payload.len;
+	memcpy(frm->request->file.path.buff, conn->frame_payload.buff, (conn->frame_payload.len+1));
+	frm->request->file.id.buff = frm->request->file.path.buff-32;
 	frm->request->file.id.len = 32;
 	
 	return 0;
@@ -65,8 +66,8 @@ int upload_file_prepare(struct H2_Frame *frm) {
 
 void upload_file(struct H2_Frame *frm) {
 	
-	if (frm->type != 0) { // only data frames
-		frm->request->file.fd = -1;
+	if (frm->type == 1) // headers frame
+	{
 		return;
 	}
 	
@@ -76,6 +77,7 @@ void upload_file(struct H2_Frame *frm) {
 	{
 		if (upload_file_prepare(frm) == -1)
 		{
+			H2_req_read(conn, conn->frame_payload.buff, frm->len);
 			response_500(frm);
 		}
 		
@@ -99,7 +101,7 @@ void upload_file(struct H2_Frame *frm) {
 	{
 		frm->request->file.finish = 1;
 		response_writeHead(frm, (array{{"200",8}, {NULL,0} }));
-		response_end(frm, frm->request->file.id.buff, frm->request->file.id.len);
+		response_end(frm, frm->request->file.path.buff, frm->request->file.path.len);
 	}
 	else if (frm->request->file.size > MAX_RECIVE_DATA_SIZE) // file size too big than MAX_RECIVE_DATA_SIZE
 	{
