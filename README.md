@@ -54,19 +54,6 @@ const void *headers_path_table[][3] = {
 
 ```
 
-* if you use your function name with path `'/'` you need also to use it with path `NULL` for http2 default request, like this:
-
-```c
-
-const void *headers_path_table[][3] = {
-     /* method, path, application */
-	{"GET", NULL, my_html},
-	{"GET", "/", my_html},
-	{NULL} /*end*/
-};
-
-```
-
 in linux terminal do :
 
 * run `make` in terminal.

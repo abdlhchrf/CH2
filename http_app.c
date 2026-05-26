@@ -115,7 +115,6 @@ void upload_file(struct H2_Frame *frm) {
 
 //~ method, path, application
 const void *headers_path_table[][3] = {
-	{"GET", NULL, GET_default}, /*do not remove this, for http2 default req same as "/", you can replace the func GET_default*/
 	{"GET", "/", GET_default},
 	{"GET", "/files", GET_files},
 	{"GET", "/favicon.ico", GET_favicon},

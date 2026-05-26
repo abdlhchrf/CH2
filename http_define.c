@@ -270,7 +270,7 @@ const int H2_huff_table[][2] = { // from github.com/nghttp2/nghttp2/blob/master/
     {0}
 };
 
-const char* H2_static_table[][2] = { // from github.com/nghttp2/nghttp2/blob/master/lib/nghttp2_hd.c
+char* H2_static_table[][2] = { // from github.com/nghttp2/nghttp2/blob/master/lib/nghttp2_hd.c
 	{NULL, NULL},
 /*1*/{":authority", NULL},
 	{":method", "GET"},

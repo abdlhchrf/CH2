@@ -2450,7 +2450,7 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 				switch (header)
 				{
 					case 2:
-						req->method = ((binary_data){(char*)H2_static_table[2][1], 3}); // "GET" lenght is 3
+						req->method = ((binary_data){H2_static_table[2][1], 3}); // "GET" lenght is 3
 						break;
 					case 3:
 						if (head && !head->name.buff)
@@ -2458,12 +2458,11 @@ struct H2_request *H2_parse_headers(struct H2_Frame *frm, struct H2_connection *
 							req->method = head->value;
 							break;
 						}
-						req->method = ((binary_data){(char*)H2_static_table[3][1], 4}); // "POST" lenght is 4
+						req->method = ((binary_data){H2_static_table[3][1], 4}); // "POST" lenght is 4
 						break;
 					case 4:
 					case 5:
-						req->path.buff = NULL;
-						req->path.len = header;
+						req->path = ((binary_data){H2_static_table[header][1], strlen(H2_static_table[header][1])});
 						break;
 					default:
 						break;
