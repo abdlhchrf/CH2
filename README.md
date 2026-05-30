@@ -35,7 +35,7 @@ void my_html(struct H2_Frame *frm) {
 
 ```
 
-* `{"200",8}` `status 200`, 8 is the index of `status 200` in `H2_static_table` table in file `http_define.c`, same as `{NULL,8}`.
+* `{"200",8}` `status 200`, 8 is the index of `status 200` in `H2_static_table` in file `http_define.c`, same as `{NULL,8}`.
 * `{"text/html",31}` `content-type: text/html`, 31 is the index of `content-type` in `H2_static_table` .
 * you must add `{NULL,0}` at the end, to mark the end of the array.
 * in `response_end(frm, payload, -1);` `-1` mean that the function will use `strlen()` to calculate the length of the payload.
@@ -47,8 +47,8 @@ then add the function `my_html` name to `headers_path_table` in file `http_app.c
 ```c
 
 const void *headers_path_table[][3] = {
-     /* method, path, application */
-	{"GET", "/myhtml", my_html},
+ /* method, path, application */
+	{"GET", "/", my_html},
 	{NULL} /*end*/
 };
 

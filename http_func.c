@@ -160,7 +160,7 @@ int cton(const char *str, int size) // bits to number
     return res;
 }
 
-char *ntoc(char *str, int num, int size) // represent number in bits
+char *ntob(char *str, int num, int size) // represent number in bits
 {
 	//~ int size = sizeof(int);
 	//~ size <<= 3;
@@ -1208,7 +1208,7 @@ int ux_socket_connect(struct buffer poc_adrr) {
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	addr.sun_path[0] = '\0';
-	//~ ntoc(addr.sun_path+1, pid, 32);
+	//~ ntob(addr.sun_path+1, pid, 32);
 	memcpy(addr.sun_path+1, poc_adrr.buff, poc_adrr.len);
 	
 	//~ sendto(sockfd, buff, len, 0, (struct sockaddr*)&addr, sizeof(addr));
@@ -1223,10 +1223,10 @@ int ux_socket_connect(struct buffer poc_adrr) {
 int ux_socket_write(int sock_fd, struct buffer data, char type, char flags, int stream_id) {
 	
 	char header[9];
-	ntoc(header, data.len, 24);
+	ntob(header, data.len, 24);
 	header[3] = type; //0x0b
 	header[4] = flags;
-	ntoc(header+5, stream_id, 32);
+	ntob(header+5, stream_id, 32);
 	
 	send(sock_fd, header, 9, MSG_NOSIGNAL);
 	send(sock_fd, data.buff, data.len, MSG_NOSIGNAL);
@@ -1254,7 +1254,7 @@ int ux_socket_listen(int pid) { // unix socket
 	
 	addr.sun_family = AF_UNIX;
 	addr.sun_path[0] = '\0';
-	ntoc(addr.sun_path+1, pid, 32);
+	ntob(addr.sun_path+1, pid, 32);
 	
 	//~ memcpy(addr.sun_path+1, data.buff, data.len);
 	//~ warning: ‘memcpy’ reading 107 bytes from a region of size 30 sizeof(addr.sun_path)-1
@@ -1321,7 +1321,7 @@ int add_conn_to_router(struct H2_connection *conn, struct buffer data, char type
 	
 	char chunk[4];
 	int i = ux_socket_connect(((binary_data){"router_server_with_unix_socket",-1}));
-	ntoc(chunk, proc_id, 32); // (char*)&proc_id is mirored
+	ntob(chunk, proc_id, 32); // (char*)&proc_id is mirored
 	switch (type)
 	{
 		case 0: //search
@@ -1383,8 +1383,8 @@ struct buffer *str_prepare(struct buffer *pos, char* str, struct buffer list[]) 
 				}
 				i++;
 			break; // for number
-			case '@':
-				if (list[i].len == -1)
+			case '#':
+				if (list[i].len == 0)
 				{
 					pos->buff[pos->len]='0';
 					pos->len++;
@@ -1763,27 +1763,27 @@ int H2_encode_header(char *data_save, int number, int prefixNbits) { // represen
 	int i=0;
 	if (number < ((0x01<<prefixNbits)-1))
 	{
-		ntoc(data_save+i, number, 8);
+		ntob(data_save+i, number, 8);
 	}
 	else if (number == (0x01<<prefixNbits)-1)
 	{
-		ntoc(data_save+i, ((0x01<<prefixNbits)-1), 8);
+		ntob(data_save+i, ((0x01<<prefixNbits)-1), 8);
 		i++;
-		ntoc(data_save+i, 0, 8);
+		ntob(data_save+i, 0, 8);
 	}
 	else
 	{
-		ntoc(data_save+i, ((0x01<<prefixNbits)-1), 8);
+		ntob(data_save+i, ((0x01<<prefixNbits)-1), 8);
 		number-=((0x01<<prefixNbits)-1);
 		while (number>=128)
 		{
 			i++;
-			ntoc(data_save+i, ((number%128)+128), 8);
+			ntob(data_save+i, ((number%128)+128), 8);
 			number>>=7;
 		}
 		
 		i++;
-		ntoc(data_save+i, number, 8);
+		ntob(data_save+i, number, 8);
 	}
 	
 	i++;
@@ -2085,10 +2085,10 @@ int H2_res_write(struct H2_connection *conn, int len, char type, char flags, int
 		len=strlen(payload);
 	}
 	
-	ntoc(header, len, 24);
+	ntob(header, len, 24);
 	header[3] = type;
 	header[4] = flags;
-	ntoc(header+5, stream_id, 32);
+	ntob(header+5, stream_id, 32);
 	//~ Length			Type	Flags	1 bit Reserved + Stream Id
 	//~	\x00\x00\x1e	\x04	\x00	\x00\x00\x00\x00\	 //Frame Format exemple
 	
@@ -2980,13 +2980,13 @@ int H2_thread(void *arg) {
 						
 						if(frm->recv_window <= MINIMUM_WINDOW_SIZE)
 						{
-							H2_res_write(conn, 4, 8, 0, frm->stream_id, ntoc(conn->frame_payload.buff, MAXIMUM_WINDOW_UPDATE-frm->recv_window, 31));
+							H2_res_write(conn, 4, 8, 0, frm->stream_id, ntob(conn->frame_payload.buff, MAXIMUM_WINDOW_UPDATE-frm->recv_window, 31));
 							frm->recv_window = MAXIMUM_WINDOW_UPDATE-frm->recv_window;
 						}
 						
 						if (conn->recv_window <= MINIMUM_WINDOW_SIZE)
 						{
-							H2_res_write(conn, 4, 8, 0, 0, ntoc(conn->frame_payload.buff, MAXIMUM_WINDOW_UPDATE-conn->recv_window, 31));
+							H2_res_write(conn, 4, 8, 0, 0, ntob(conn->frame_payload.buff, MAXIMUM_WINDOW_UPDATE-conn->recv_window, 31));
 							conn->recv_window = MAXIMUM_WINDOW_UPDATE-conn->recv_window;
 						}
 						

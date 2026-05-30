@@ -119,10 +119,19 @@ const void *headers_path_table[][3] = {
 	{"GET", "/files", GET_files},
 	{"GET", "/favicon.ico", GET_favicon},
 	{"POST", "/upload_file", upload_file},
+	/*
+	 {"HEAD"},
+	 {"DELETE"},
+	 {"TRACE"},
+	 {"PUT"},
+	 {"UPDATE"},
+	 {"OPTIONS"},
+	 {"PATCH"}
+	*/
 	{NULL} /*list end*/
 };
 
-//~ {"HEAD"},{"DELETE"},{"TRACE"},{"PUT"},{"OPTIONS"},{"TRACE"},{"PATCH"},
+
 
 
 
